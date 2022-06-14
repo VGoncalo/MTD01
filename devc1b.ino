@@ -6,8 +6,8 @@ const char* pass = "username";
 WiFiServer server(80);
 String httpRequestHeader;
 
-String output16State = "off";
-const int relebomba = 16;
+String output18State = "off";
+const int relebomba = 18;
 
 void setup() {
   Serial.begin(115200);
@@ -48,7 +48,15 @@ void loop() {
             client.println();
             
             // Switch WaterPump State
-
+	    if(httpRequestHeader.indexOf("GET /18/on") >= 0){
+              Serial.println("GPIO 18 on");
+              output18State = "on";
+              digitalWrite(relebomba, HIGH);
+            }else if(httpRequestHeader.indexOf("GET /18/off") >= 0){
+              Serial.println("GPIO 18 off");
+              output18State = "off";
+              digitalWrite(relebomba, LOW);
+            }
 
             // Display the HTML web page
             client.println("<!DOCTYPE html><html>");
@@ -61,7 +69,12 @@ void loop() {
             client.println(".button2 {background-color: #555555;}</style></head>");
             // <body>
             client.println("<body><h1>MTD01 Web Server</h1>");
-            client.println("<p>ola pias</p>");
+            client.println("<p>GPIO 18 - State " + output18State + "</p>");      
+            if (output18State=="off") {
+              client.println("<p><a href=\"/18/on\"><button class=\"button\">ON</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/18/off\"><button class=\"button button2\">OFF</button></a></p>");
+            } 
             // </body>
             client.println("</body></html>");
             client.println();
