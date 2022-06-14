@@ -15,7 +15,7 @@ void setup() {
   Serial.print(".");
   pinMode(relebomba, OUTPUT);
   Serial.print(".");
-  digitalWrite(relebomba, LOW);
+  digitalWrite(relebomba, HIGH);
   Serial.print(".");
   Serial.println("Setting AP (Access Point)");
   Serial.print(".");
@@ -51,11 +51,11 @@ void loop() {
 	    if(httpRequestHeader.indexOf("GET /18/on") >= 0){
               Serial.println("GPIO 18 on");
               output18State = "on";
-              digitalWrite(relebomba, HIGH);
+              digitalWrite(relebomba, LOW);
             }else if(httpRequestHeader.indexOf("GET /18/off") >= 0){
               Serial.println("GPIO 18 off");
               output18State = "off";
-              digitalWrite(relebomba, LOW);
+              digitalWrite(relebomba, HIGH);
             }
 
             // Display the HTML web page
