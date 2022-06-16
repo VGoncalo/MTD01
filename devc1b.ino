@@ -1,4 +1,5 @@
 #include <WiFi.h>
+#include <DHT.h>
 
 const char* ssid = "MTD01-AP";
 const char* pass = "username";
@@ -6,31 +7,43 @@ const char* pass = "username";
 WiFiServer server(80);
 String httpRequestHeader;
 
-String output18State = "off";
+String output18State = "off";  // off = high
 const int relebomba = 18;
+
+#define DHTPIN 4
+#define DHTTYPE DHT11
+
+DHT dht(DHTPIN,DHTTYPE);
 
 void setup() {
   Serial.begin(115200);
-  Serial.print("Setting Bomba pin");
-  Serial.print(".");
+  Serial.print("Setting Bomba pin...");
   pinMode(relebomba, OUTPUT);
-  Serial.print(".");
   digitalWrite(relebomba, HIGH);
-  Serial.print(".");
+  Serial.print("Setting DHT...");
+  dht.begin();
   Serial.println("Setting AP (Access Point)");
-  Serial.print(".");
   WiFi.softAP(ssid,pass);
-  Serial.print(".");
   IPAddress IP = WiFi.softAPIP();
-  Serial.print(".");
   Serial.println("AP IP address: ");
   Serial.print(IP);
-  Serial.println("about to start server");
   server.begin();
 }
 
 void loop() {
   WiFiClient client = server.available();
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+
+  if(isnan(h) || isnan(t)){
+    Serial.println(F("Failed to read from dht sensor"));
+    return;
+  }
+
+  Serial.print("Humidity: ");
+  Serial.print(h);
+  Serial.print("%  Temperature: ");
+  Serial.print(t);
   
   if(client){                             
     Serial.println("New Client.");
@@ -48,7 +61,7 @@ void loop() {
             client.println();
             
             // Switch WaterPump State
-	    if(httpRequestHeader.indexOf("GET /18/on") >= 0){
+	          if(httpRequestHeader.indexOf("GET /18/on") >= 0){
               Serial.println("GPIO 18 on");
               output18State = "on";
               digitalWrite(relebomba, LOW);
@@ -68,13 +81,19 @@ void loop() {
             client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
             client.println(".button2 {background-color: #555555;}</style></head>");
             // <body>
-            client.println("<body><h1>MTD01 Web Server</h1>");
-            client.println("<p>GPIO 18 - State " + output18State + "</p>");      
+            client.println("<body><h1>MTD-01</h1>");
+            client.println("<hr></hr>");   
+            client.println("<h4>Water Pump</h4>");      
+            //client.println("<p>GPIO 18 - State " + output18State + "</p>");      
             if (output18State=="off") {
               client.println("<p><a href=\"/18/on\"><button class=\"button\">ON</button></a></p>");
             } else {
               client.println("<p><a href=\"/18/off\"><button class=\"button button2\">OFF</button></a></p>");
             } 
+            client.println("<hr></hr>");   
+            client.println("<h4>DHT</h4>");      
+            client.println("<p>Temperature --> " + String(t) + " C</p>");     
+            client.println("<p>Humidity ----->" + String(h) + " %</p>");
             // </body>
             client.println("</body></html>");
             client.println();
